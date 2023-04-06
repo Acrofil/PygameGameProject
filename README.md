@@ -15,7 +15,7 @@ There are total of 4 images that we can use for our game and we must not use oth
 
 
 # My game information
-##                                             Ghost Blaster                                                                                                                                   
+##  Ghost Blaster v.0                                                                                                                                   
  - Game Objective - Collect 5 coins to level up, starting point level 0, end point reach level 5 without dying.
  - Two types of ghosts come from above:                                                                        
  - Type 1: Gray: They are following you whenever you go.                                                       
@@ -27,5 +27,5 @@ There are total of 4 images that we can use for our game and we must not use oth
  - If you shoot another ghost the coin respawns at the new location. Sometimes would be necessary to do so.    
  - There is some kind of escape mechanism with the doors, with little delay between usage.                     
  - Goal is to reach level 5 without spending all your lives/hits.                                              
- - Bonus coin spawns at the start of the game                                                                  
+ - Bonus coin spawns at the start of the game at random location - Left or Right corner of the screen          
                                                                                                                
