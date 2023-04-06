@@ -4,29 +4,29 @@ import math
 import random
 import os
 
-##################################################### Game Info #################################################
+##################################################### GAME INFO #################################################
 #                                                                                                               #                     
-# Game Objective - Collect 5 coins to level up, starting point level 0, end point reach level 5 withour dying.  #
-# Two types of ghosts come from above to take you up:                                                           #
-# Type 1 Gray: They are following you whenever you go.                                                          #
-# Type 2 Pink: They only fall down, but can do damage too                                                       #
-# If any ghost touch you, you lose one of your lives and the ghost dissapear.                                   #
-# On each level you gain the ghosts are increased x 5 of each type                                              #
-# When you kill ghost, coin spawns at the location where you killed it and starts falling down.                 #
-# In order to catch it you must wait for it to fall down to you.                                                #
-# If you shoot another ghost the coin respawns at the new location. Sometimes would be necessary to do so.      #
-# There is some kind of escape mechanism with the doors, with little delay between usage.                       #
-# Goal is to reach level 5 without spending all your lives/hits.                                                #
+# - Game Objective - Collect 5 coins to level up, starting point level 0, end point reach level 5 withour dying.#
+# - Two types of ghosts come from above:                                                                        #
+# - Type 1: Gray: They are following you whenever you go.                                                       #
+# - Type 2: Pink: They only fall down, but can do damage too                                                    #
+# - If any ghost touch you, you lose one of your lives and the ghost dissapear.                                 #
+# - On each level you gain, the ghosts are increased x 5 of each type are added to the game                     #
+# - When you kill ghost, coin spawns at the location where you killed it and starts falling down.               #
+# - In order to catch it you must wait for it to fall down to you.                                              #
+# - If you shoot another ghost the coin respawns at the new location. Sometimes would be necessary to do so.    #
+# - There is some kind of escape mechanism with the doors, with little delay between usage.                     #
+# - Goal is to reach level 5 without spending all your lives/hits.                                              #
 # *Bonus coin spawns at the start of the game                                                                   #
 #                                                                                                               #
-##################################################################################################################
+##################################################### GAME INFO #################################################
+
+pg.init()
 
 # Start game at center
 os.environ['SDL_VIDEO_CENTERED'] = '1'
-pg.init()
 
-pg.display.set_caption("Ghost Blaster")
-
+# Global parameters
 WIN_WIDTH, WIN_HEIGHT = (800, 800)
 RED = (255, 0, 0)
 BLACK = (0, 0, 0)
@@ -37,8 +37,9 @@ POINTS = 25
 
 # Class for creating our enemies, loading images, editing them and random location on screen
 class EnemyController:
-    def __init__(self, player):
+    def __init__(self, window_rect):
         # Create enemies 
+        self.window_rect = window_rect
         self.enemies = []
         self.player_enemies = 5
         self.create_enemies()
@@ -46,6 +47,7 @@ class EnemyController:
         self.enemy_image_won = self.enemy_image_load('pink')
         self.enemy_image_won_rect = self.enemy_image_won.get_rect()
     
+    # Create our enemies. Load them and do modifications. Append them to our list with enemies
     def create_enemies(self):
         self.gray_enemy_image = self.enemy_image_load('gray')
         self.pink_enemy_image = self.enemy_image_load('pink')
@@ -60,6 +62,7 @@ class EnemyController:
         arr.replace(from_, to)
         del arr
     
+    # Load enemy image, swap colors, transform.
     def enemy_image_load(self, type):
         image = pg.image.load('monster.png').convert_alpha()
         if type == 'gray':
@@ -78,18 +81,19 @@ class EnemyController:
             #transformed_image = image
             
             return transformed_image
-          
-    def random_enemy_location(self, type):
-        x = random.randint(0, window_rect.width)
-        y = random.randint(-500, -100)
 
+    # Random enemy location on screen      
+    def random_enemy_location(self, type):
+        x = random.randint(0, self.window_rect.width)
+        y = random.randint(-500, -100)
+        
         if type == 'gray':
-            return Enemy(self.gray_enemy_image, window_rect, (x, y), type)
+            return Enemy(self.gray_enemy_image, self.window_rect, (x, y), type)
         elif type == 'pink':
-            return Enemy(self.pink_enemy_image, window_rect, (x, y), type)
+            return Enemy(self.pink_enemy_image, self.window_rect, (x, y), type)
 
     # Update our enemies and check for: Collision with player, if enemy is killed, if enemy is off screen
-    def update(self, player):
+    def update(self, player, window):
         for enemy in self.enemies:
             enemy.update(player)
             enemy_type = random.choice(['gray', 'pink'])
@@ -102,16 +106,15 @@ class EnemyController:
                 self.enemies.remove(enemy)
                 player.take_damage(1)
                 self.enemies.append(self.random_enemy_location(enemy_type))
-                break
-                # Adding break after collision makes ghosts flicker sometimes
-                # Without break sometimes trow error - x not in list             
+                # Sometimes generates error when player is moving and ghost touch it
+                break           
             
             if enemy.off_screen: # If its offscren, remove it and add it to a starting location again
                 self.enemies.remove(enemy)
                 enemy.off_screen = False
                 self.enemies.append(self.random_enemy_location(enemy_type))
             
-            if player.upgrade_enemies:
+            if player.upgrade_enemies: # If level up upgrade_enemies == True
                 self.update_max_enemies(player)
                 player.upgrade_enemies = False
                 
@@ -119,8 +122,8 @@ class EnemyController:
         
     def update_max_enemies(self, player):
         
-        self.player_enemies += 3
-        self.create_enemies()    
+        self.player_enemies += 5 # Increase our enemies by 5
+        self.create_enemies()    # Create new enemies 
     
 class Enemy:
     def __init__(self, image, window_rect, starting_position, enemy_type):
@@ -181,7 +184,7 @@ class Enemy:
         surface.blit(self.image, self.rect )
 
 class Player:
-    def __init__(self, window_rect):
+    def __init__(self, window_rect, tools):
         # Player image, position and starting position
         self.window_rect = window_rect
         self.image = pg.image.load('robot.png').convert()
@@ -191,7 +194,7 @@ class Player:
         self.speed = 3
         self.rect = self.image.get_rect(center=(self.window_rect.centerx, self.window_rect.bottom - self.start_buffer)) 
 
-        # Img for dead screen
+        # Image for dead screen
         self.dead_image = pg.transform.rotate(self.image, 180) 
         self.dead_image_rect = self.dead_image.get_rect(center=(self.rect.centerx, self.rect.bottom - self.start_buffer))
 
@@ -221,27 +224,26 @@ class Player:
 
         # Timer and delay for door use
         self.door_timer = 0.0
-        self.door_delay = 500
+        self.door_delay = 1000
         self.can_enter = False
+
+        self.tools = tools
     
     def take_damage(self, value):
         self.lives -= value
-        TOOLS.update_lives(self.lives)
+        self.tools.update_lives(self.lives)
     
     def add_points(self, value):
         self.points += value
-        TOOLS.update_score(self.points)
+        self.tools.update_score(self.points)
     
     def level_up(self):
         self.level += 1
         self.upgrade_enemies = True
-        TOOLS.update_level(self.level)
+        self.tools.update_level(self.level)
 
         if self.level == 5:
             self.game_won = True
-    
-    def get_level(self):
-        return self.level
     
     # Listening for events for player pressing space == shooting
     def get_event(self, event):
@@ -255,6 +257,7 @@ class Player:
             if event.key == pg.K_q:
                 pg.quit()
                 sys.exit()
+
     # Update player
     def update(self, keys, enemies, door):
         self.rect.clamp_ip(self.window_rect) # Set boundaries for player for moving off screen
@@ -302,22 +305,26 @@ class Player:
                             self.coin_cord = enemy.rect.x, enemy.rect.y # Spawn coin at enemy cordinates we killed it
                         self.lasers.remove(laser) # Remove laser after we kill enemy
                         break
-    
+
+    # On every 5 coins level up and set coins count to 0 again
     def check_player_level(self):
         if self.coin_count == 5:
             self.level_up()
             self.coin_count = 0
     
+    # Check if player is entering door and use timer.
     def check_player_enter_door(self, door):
-        if pg.time.get_ticks() - self.door_timer > self.door_delay:
-            self.door_timer = pg.time.get_ticks()
-            self.can_enter = True
-            if player.rect.x < door.rect.x and self.can_enter:
+        # For some reason could not check for collision between door and player and used player rect x & screen width.
+        # Timer to enter the door
+        if pg.time.get_ticks() - self.door_timer > self.door_delay: 
+            self.door_timer = pg.time.get_ticks() # Door timer is set to current time tick
+            self.can_enter = True 
+            # Left door
+            if self.rect.x < door.rect.x and self.can_enter:
                 self.rect = self.image.get_rect(center=(self.window_rect.right - 50, self.window_rect.bottom - self.start_buffer))
                 self.can_enter = False
-            
-            
-            elif player.rect.x > WIN_WIDTH - 70 and self.can_enter:
+            # Right door   
+            elif self.rect.x > WIN_WIDTH - 70 and self.can_enter:
                 self.rect = self.image.get_rect(center=(self.window_rect.left - 50, self.window_rect.bottom - self.start_buffer))
                 self.can_enter = False
 
@@ -335,7 +342,7 @@ class GhostBlaster:
         self.mask = pg.mask.from_surface(self.image)
         self.image.fill(color)
         self.rect = self.image.get_rect(center=loc) # loc = location of our robot
-        self.speed = 10
+        self.speed = 8
     
     def update(self, direction='up'):
         if direction == 'down':
@@ -343,7 +350,7 @@ class GhostBlaster:
         else:
             self.rect.y -= self.speed
         
-        # Check if laser is off screen
+        # Check if laser is off screen and remove it
         if self.rect.bottom < self.window_rect.top: 
             return True
     
@@ -361,9 +368,10 @@ class Coin:
         self.collected = False
         self.coin_points = 50
         self.speed = 5
-    
+
+    #  Update our coin and if not collected move it down
     def update(self, player):
-        if not self.collected: # If not collected move it
+        if not self.collected:
             self.rect.y += self.speed
             
         if player.spawn_coin: # if true
@@ -398,13 +406,13 @@ class Floor:
         for i in range(round(WIN_WIDTH / self.image_rect.width)):
             self.floor.append(self.image)
 
-    # Draw floor
+    # Draw floor according to screen width
     def draw(self, surface):
         x = 0
         for i in range(len(self.floor)):
             surface.blit(self.image, [x + self.image_rect.width * i, self.bottom_position])
 
-# Escape mechanism
+# Escape mechanism for our robot
 class Door:
     def __init__(self, window_rect):
         self.image = pg.image.load('door.png').convert()
@@ -414,7 +422,7 @@ class Door:
         
         # Door height position
         self.door_height_position = WIN_HEIGHT - (95 + self.rect.height)
-
+    # Draw our doors at both sides on screen
     def draw(self, surface):
         surface.blit(self.original_image, (0, self.door_height_position))
         surface.blit(self.original_image, (WIN_WIDTH - self.rect.width, self.door_height_position))
@@ -422,10 +430,12 @@ class Door:
 # For printing Game won, game over and player stats & score
 class Tools:
     def __init__(self, window):
+        # window rect and font init
         self.window = window
         self.window_rect = window.get_rect()
         self.font_init(self.window_rect)
     
+    # Defining font size, color and position on screen for texts also update them
     def font_init(self, window_rect):
         self.text_size = 25
         self.text_color = (GREEN)
@@ -436,6 +446,7 @@ class Tools:
         self.new_game_position = (WIN_WIDTH - 380, WIN_HEIGHT - 10)
         self.exit_game_position = (WIN_WIDTH - 250, window_rect.bottom - 10)
 
+        # Update all of our texts
         self.update_score()
         self.update_lives()
         self.update_level()
@@ -444,7 +455,8 @@ class Tools:
         self.new_game()
         self.game_over()
         self.game_won()
-         
+
+    # Create score, lives, level, exit, new game texts     
     def update_score(self, score=0):
         self.score_text, self.score_text_rect = self.make_text(f'Score: {score}', self.score_position)
     
@@ -460,12 +472,14 @@ class Tools:
     def new_game(self):
         self.new_game_text, self.new_game_text_rect = self.make_text(f'(F2 = NG)', self.new_game_position)
     
+    # Method to make our text and position
     def make_text(self, display_text, position):
         text = self.font.render(display_text, True, self.text_color)
         rect = text.get_rect(bottomleft=position)
 
         return text, rect
     
+    # Starting screen text
     def start_screen(self):
         start_screen_font = pg.font.SysFont('Arial', 50)
         press_key_font = pg.font.SysFont('Arial', 22)
@@ -476,16 +490,19 @@ class Tools:
         self.start_screen_text_rect = self.start_screen_text.get_rect(center=self.window_rect.center)
         self.press_key_rect = self.press_key.get_rect(center=self.start_screen_text_rect.midbottom)
 
+    # Game over text and position on screen
     def game_over(self):
         game_over_font = pg.font.SysFont('Arial', 55)
         self.game_over_text = game_over_font.render('GAME OVER!', True, (RED))
         self.game_over_rect = self.game_over_text.get_rect(center=self.window_rect.center)
-    
+
+    # Game won text and position on screen
     def game_won(self):
         game_won_font = pg.font.SysFont('Arial', 55)
         self.game_won_text = game_won_font.render('YOU WON THE GAME!', True, (RED))
         self.game_won_rect = self.game_won_text.get_rect(center=self.window_rect.center)
 
+    # Draw texts on screen
     def draw(self):
         self.window.blit(self.score_text, self.score_text_rect)
         self.window.blit(self.lives_text, self.lives_text_rect)
@@ -493,56 +510,88 @@ class Tools:
         self.window.blit(self.ex_text, self.exit_text_rect)
         self.window.blit(self.new_game_text, self.new_game_text_rect)
 
-# Main game loop     
-window = pg.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
-window_rect = window.get_rect()
-clock = pg.time.Clock()
-running = True
-player = Player(window_rect)
-floor = Floor(window_rect)
-door = Door(window_rect)
-enemy_contol = EnemyController(player)
-coin = Coin()
-TOOLS = Tools(window)
-pressed_key = False
+# The Game class with the main loop, updates and draws.
+class Game:
+    def __init__(self):  
+        # Creating window screen
+        self.window = pg.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
+        self.window_rect = self.window.get_rect()
 
-while running:
-    keys = pg.key.get_pressed()
-    for event in pg.event.get():
-        if event.type == pg.KEYDOWN:
-            pressed_key = True
-        if event.type == pg.QUIT:
-            running = False
-        player.get_event(event)
-    
-    window.fill(BLACK)
-    if not player.dead and not player.game_won and pressed_key:
-        player.update(keys, enemy_contol.enemies, door)
-        enemy_contol.update(player)
-        coin.update(player)
+        pg.display.set_caption("Ghost Blaster")
 
-        coin.draw(window)
-        player.draw(window)
+        self.new_game()
 
-    if player.dead:
-        window.blit(TOOLS.game_over_text, TOOLS.game_over_rect)
-        window.blit(player.dead_image, player.dead_image_rect)
-        window.blit(enemy_contol.enemy_image_won, (330, 447))
+    # Player, floor, door, enemy_control/enemies & coin. Tools for our texts, start and game over screens
+    def new_game(self):
+        tools = Tools(self.window)
+        player = Player(self.window_rect, tools)
+        floor = Floor(self.window_rect)
+        door = Door(self.window_rect)
+        enemy_contol = EnemyController(self.window_rect)
+        coin = Coin()
 
-    if player.game_won:
-        window.blit(TOOLS.game_won_text, TOOLS.game_won_rect)
-    
-    if not pressed_key:
-        window.blit(TOOLS.start_screen_text, TOOLS.start_screen_text_rect)
-        window.blit(TOOLS.press_key, TOOLS.press_key_rect)
-        window.blit(player.original_image, TOOLS.press_key_rect.midbottom)
-     
-    floor.draw(window)
-    door.draw(window)
-    TOOLS.draw()
-   
-    pg.display.update()
-    clock.tick(60)
+        self.main_loop(tools, player, floor, door, enemy_contol, coin)
 
-pg.quit()
-sys.exit(0)
+    def main_loop(self, tools, player, floor, door, enemy_control, coin):
+        # Clock
+        clock = pg.time.Clock()
+         # While loop is running
+        running = True
+        # Start screen check
+        pressed_key = False
+
+        # Main game loop  
+        while running:
+            # Listen for keys pressed / movement
+            keys = pg.key.get_pressed()
+            # Listen for events. Start game, exit game and shooting
+            for event in pg.event.get():
+                if event.type == pg.KEYDOWN:
+                    pressed_key = True 
+                    if event.key == pg.K_F2:
+                        self.new_game()
+                if event.type == pg.QUIT:
+                    running = False
+                player.get_event(event)
+            
+            self.window.fill(BLACK)
+            # If player is alive and game is not won and game is started. Update player, enemies and coin and draw them on screen
+            if not player.dead and not player.game_won and pressed_key:
+                player.update(keys, enemy_control.enemies, door)
+                enemy_control.update(player, self.window)
+                coin.update(player)
+
+                coin.draw(self.window)
+                player.draw(self.window)
+
+            # If player is dead display game over screen.
+            if player.dead:
+                self.window.blit(tools.game_over_text, tools.game_over_rect)
+                self.window.blit(player.dead_image, player.dead_image_rect)
+                self.window.blit(enemy_control.enemy_image_won, (330, 447))
+
+            # Game won screen
+            if player.game_won:
+                self.window.blit(tools.game_won_text, tools.game_won_rect)
+
+            # Start screen
+            if not pressed_key:
+                self.window.blit(tools.start_screen_text, tools.start_screen_text_rect)
+                self.window.blit(tools.press_key, tools.press_key_rect)
+                self.window.blit(player.original_image, tools.press_key_rect.midbottom)
+
+            # Floor and door draw. Score, lives, level, exit and new game texts draw.
+            floor.draw(self.window)
+            door.draw(self.window)
+            tools.draw()
+        
+            pg.display.update()
+            clock.tick(60)
+
+        # Exit
+        pg.quit()
+        sys.exit(0)
+
+if __name__ == "__main__":
+    game = Game()
+    game.new_game()
