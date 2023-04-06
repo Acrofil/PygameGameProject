@@ -3,17 +3,20 @@
 
 ## Project objective is to create a game using OOP concepts learned in the course. 
 There are total of 4 images that we can use for our game and we must not use other images because of testing our game by others.
+- The images we have are robot, coin, monster/ghost, door. 
 
+# Game assigment objective
 - Game has to have moveble sprite that player can move
 - The game has to have enemies or items to be collected
 - Player must have clear task in the game
-- The game must have some kind of counter to show how the player is doing
+- The game must have some kind of counter to show how the player is doing in the game
+- Use functions, methods.
 
-- The images we have are robot, coin, monster/ghost, door. 
+
 
 # My game information
-## Ghost Blaster                                                                                                                                   
- - Game Objective - Collect 5 coins to level up, starting point level 0, end point reach level 5 withour dying.
+##                                             Ghost Blaster                                                                                                                                   
+ - Game Objective - Collect 5 coins to level up, starting point level 0, end point reach level 5 without dying.
  - Two types of ghosts come from above:                                                                        
  - Type 1: Gray: They are following you whenever you go.                                                       
  - Type 2: Pink: They only fall down, but can do damage too                                                    

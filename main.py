@@ -4,9 +4,9 @@ import math
 import random
 import os
 
-##################################################### GAME INFO #################################################
+################################################ GAME INFO ######################################################
 #                                                                                                               #                     
-# - Game Objective - Collect 5 coins to level up, starting point level 0, end point reach level 5 withour dying.#
+# - Game Objective - Collect 5 coins to level up, starting point level 0, end point reach level 5 without dying.#
 # - Two types of ghosts come from above:                                                                        #
 # - Type 1: Gray: They are following you whenever you go.                                                       #
 # - Type 2: Pink: They only fall down, but can do damage too                                                    #
@@ -17,16 +17,16 @@ import os
 # - If you shoot another ghost the coin respawns at the new location. Sometimes would be necessary to do so.    #
 # - There is some kind of escape mechanism with the doors, with little delay between usage.                     #
 # - Goal is to reach level 5 without spending all your lives/hits.                                              #
-# *Bonus coin spawns at the start of the game                                                                   #
+# - Bonus coin spawns at random location - Left or Right corner at the start of the game.                       #
 #                                                                                                               #
-##################################################### GAME INFO #################################################
+################################################ GAME INFO ######################################################
 
 pg.init()
 
-# Start game at center
+# Start game at center of the screen
 os.environ['SDL_VIDEO_CENTERED'] = '1'
 
-# Global parameters
+# Global's
 WIN_WIDTH, WIN_HEIGHT = (800, 800)
 RED = (255, 0, 0)
 BLACK = (0, 0, 0)
@@ -34,23 +34,25 @@ GREEN = (42, 178, 106)
 GRAY = (177, 177, 177)
 PINK = (255,20,147)
 POINTS = 25
+FPS = 60
 
-# Class for creating our enemies, loading images, editing them and random location on screen
+# Class for creating the enemies, loading images, editing them and random location on screen
 class EnemyController:
     def __init__(self, window_rect):
         # Create enemies 
         self.window_rect = window_rect
         self.enemies = []
         self.player_enemies = 5
+        self.gray_enemy_image = self.enemy_image_load('gray')
+        self.pink_enemy_image = self.enemy_image_load('pink')
         self.create_enemies()
 
+        # Used only for our game over screen
         self.enemy_image_won = self.enemy_image_load('pink')
         self.enemy_image_won_rect = self.enemy_image_won.get_rect()
     
     # Create our enemies. Load them and do modifications. Append them to our list with enemies
     def create_enemies(self):
-        self.gray_enemy_image = self.enemy_image_load('gray')
-        self.pink_enemy_image = self.enemy_image_load('pink')
 
         for i in range(self.player_enemies):
             self.enemies.append(self.random_enemy_location('gray'))
@@ -62,7 +64,7 @@ class EnemyController:
         arr.replace(from_, to)
         del arr
     
-    # Load enemy image, swap colors, transform.
+    # Load enemy image, swap colors, transform image
     def enemy_image_load(self, type):
         image = pg.image.load('monster.png').convert_alpha()
         if type == 'gray':
@@ -82,7 +84,7 @@ class EnemyController:
             
             return transformed_image
 
-    # Random enemy location on screen      
+    # Generate random enemy location on screen      
     def random_enemy_location(self, type):
         x = random.randint(0, self.window_rect.width)
         y = random.randint(-500, -100)
@@ -91,8 +93,8 @@ class EnemyController:
             return Enemy(self.gray_enemy_image, self.window_rect, (x, y), type)
         elif type == 'pink':
             return Enemy(self.pink_enemy_image, self.window_rect, (x, y), type)
-
-    # Update our enemies and check for: Collision with player, if enemy is killed, if enemy is off screen
+      
+    # Update our enemies and check for: Collision with player, if enemy is killed or if enemy is off screen
     def update(self, player, window):
         for enemy in self.enemies:
             enemy.update(player)
@@ -101,29 +103,34 @@ class EnemyController:
                 self.enemies.remove(enemy)
                 player.add_points(POINTS)
                 self.enemies.append(self.random_enemy_location(enemy_type))
-                        
-            if enemy.collide_player: # If collide with player
+
+             # If there is collision with player           
+            if enemy.collide_player:
                 self.enemies.remove(enemy)
                 player.take_damage(1)
                 self.enemies.append(self.random_enemy_location(enemy_type))
                 # Sometimes generates error when player is moving and ghost touch it
-                break           
-            
-            if enemy.off_screen: # If its offscren, remove it and add it to a starting location again
+                break 
+
+            # If its offscren, remove it and add it to a random starting location again
+            if enemy.off_screen: 
                 self.enemies.remove(enemy)
                 enemy.off_screen = False
                 self.enemies.append(self.random_enemy_location(enemy_type))
-            
-            if player.upgrade_enemies: # If level up upgrade_enemies == True
+
+            # If level up upgrade_enemies == True. Upgrade max enemies, set upgrade to false for next level up
+            if player.upgrade_enemies: 
                 self.update_max_enemies(player)
                 player.upgrade_enemies = False
                 
             enemy.draw(window)
         
     def update_max_enemies(self, player):
-        
-        self.player_enemies += 5 # Increase our enemies by 5
-        self.create_enemies()    # Create new enemies 
+        # Increase our max enemies by 5 - 5 of each kind so its 10
+        # Create new enemies 
+        self.player_enemies += 5 
+        self.create_enemies()    
+        print(len(self.enemies))
     
 class Enemy:
     def __init__(self, image, window_rect, starting_position, enemy_type):
@@ -143,6 +150,7 @@ class Enemy:
         # Enemy position on screen
         self.off_screen = False
 
+    # Method to keep track of player position and move the ghost toward him
     def position_to_player(self, player_rect):
         c = math.sqrt((player_rect.x - self.rect.x) ** 2 + (player_rect.y - self.distance_from_player - self.rect.y) **2)
         try:
@@ -152,6 +160,7 @@ class Enemy:
             return False
         return (x, y)
 
+    # Update each enemy type and move them
     def update(self, player):
         if self.enemy_type == 'gray':
             new_position = self.position_to_player(player.rect) # We send player rect location
@@ -172,11 +181,11 @@ class Enemy:
     
     # Check player collision
     def check_player_collision(self, player):
-        # Check if both rects collide
-        if self.rect.colliderect(player.rect): # If they do collide
-            offset_x = player.rect.x - self.rect.x # Create offset x and y
+        # Check if both rects collide.  If they do collide,  create offset x and y and check if masks collide too.
+        if self.rect.colliderect(player.rect): 
+            offset_x = player.rect.x - self.rect.x 
             offset_y = player.rect.y - self.rect.y
-            if self.mask.overlap(player.mask, (offset_x, offset_y)): # Check if masks collide
+            if self.mask.overlap(player.mask, (offset_x, offset_y)):
                 self.collide_player = True
                          
     # Draw enemy on screen/surface/window
@@ -227,6 +236,7 @@ class Player:
         self.door_delay = 1000
         self.can_enter = False
 
+        # To update our stats information - take_damage, add_points, level_up
         self.tools = tools
     
     def take_damage(self, value):
@@ -245,22 +255,21 @@ class Player:
         if self.level == 5:
             self.game_won = True
     
-    # Listening for events for player pressing space == shooting
+    # Listening for events for player if pressing space == shooting
     def get_event(self, event):
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_SPACE:
                 if self.add_laser:  # If True == We can shoot
                     self.lasers.append(GhostBlaster(self.rect.center, self.window_rect, self.bullet_color)) # Create laser obj from Laser class and append to lasers
-                    self.add_laser = False                                                           # Set to False after appending
-            if event.key == pg.K_F2:
-                pass
+                    self.add_laser = False # Set to False after appending                                                         
             if event.key == pg.K_q:
                 pg.quit()
                 sys.exit()
 
     # Update player
     def update(self, keys, enemies, door):
-        self.rect.clamp_ip(self.window_rect) # Set boundaries for player for moving off screen
+        # Set boundaries for player not being able moving off screen
+        self.rect.clamp_ip(self.window_rect)
         
         # Move left or right
         if keys[pg.K_LEFT]:
@@ -279,12 +288,12 @@ class Player:
             if remove:
                 self.lasers.remove(laser)
 
-        # Check collision with laser, ghosts and door
+        # Check collision with laser, ghosts and door a
         self.check_collision_blaster(enemies)
         self.check_player_enter_door(door)
         self.check_player_level()
         
-        # if 0 player dead
+        # Keep track of player lives,  0 == dead
         if self.lives <= 0:
             self.lives = 0
             self.dead = True   
@@ -354,7 +363,7 @@ class GhostBlaster:
         if self.rect.bottom < self.window_rect.top: 
             return True
     
-    # Draw laser
+    # Draw laser on screen
     def render(self, surface):
         surface.blit(self.image, self.rect)
 
@@ -363,7 +372,12 @@ class Coin:
     def __init__(self):
         self.image = pg.image.load('coin.png').convert()
         self.image.set_colorkey(BLACK)
-        self.rect = self.image.get_rect()
+
+        # Spawn coin at start at random location - Left corner or Right corner
+        self.spawn_random = random.choice([[20, 0], [WIN_WIDTH -20, 0]])
+        self.rect = self.image.get_rect(center=(self.spawn_random))
+ 
+        #self.rect = self.image.get_rect(center=(self.window_rect.centerx, self.window_rect.bottom - self.start_buffer)) 
         
         self.collected = False
         self.coin_points = 50
@@ -394,7 +408,7 @@ class Coin:
         surface.blit(self.image, self.rect)
         
 class Floor:
-    def __init__(self, window_rect):
+    def __init__(self):
         self.image = pg.Surface([50, 50]).convert_alpha()
         self.image_rect = self.image.get_rect()
         self.image.fill((112, 128, 144))
@@ -414,7 +428,7 @@ class Floor:
 
 # Escape mechanism for our robot
 class Door:
-    def __init__(self, window_rect):
+    def __init__(self):
         self.image = pg.image.load('door.png').convert()
         self.original_image = pg.transform.scale(self.image, (50, 100))
         self.rect = self.original_image.get_rect()
@@ -437,8 +451,11 @@ class Tools:
     
     # Defining font size, color and position on screen for texts also update them
     def font_init(self, window_rect):
+        # Size and color
         self.text_size = 25
         self.text_color = (GREEN)
+
+        # Game texts position on screen
         self.score_position = (10, WIN_HEIGHT - 10)
         self.font = pg.font.SysFont('Arial', self.text_size)
         self.lives_position = (185, window_rect.bottom - 10)
@@ -446,17 +463,21 @@ class Tools:
         self.new_game_position = (WIN_WIDTH - 380, WIN_HEIGHT - 10)
         self.exit_game_position = (WIN_WIDTH - 250, window_rect.bottom - 10)
 
-        # Update all of our texts
+        # Create our update's texts for score, lives, level
         self.update_score()
         self.update_lives()
         self.update_level()
+
+        # Create exit, start & new game texts
         self.exit_text()
         self.start_screen()
         self.new_game()
+
+        # Create game over and game won texts
         self.game_over()
         self.game_won()
 
-    # Create score, lives, level, exit, new game texts     
+    # Create score, lives, level, exit, new game texts  updates and rects   
     def update_score(self, score=0):
         self.score_text, self.score_text_rect = self.make_text(f'Score: {score}', self.score_position)
     
@@ -519,24 +540,29 @@ class Game:
 
         pg.display.set_caption("Ghost Blaster")
 
+        # Start the game. Create player, enemies...
         self.new_game()
 
     # Player, floor, door, enemy_control/enemies & coin. Tools for our texts, start and game over screens
     def new_game(self):
         tools = Tools(self.window)
         player = Player(self.window_rect, tools)
-        floor = Floor(self.window_rect)
-        door = Door(self.window_rect)
+        floor = Floor()
+        door = Door()
         enemy_contol = EnemyController(self.window_rect)
         coin = Coin()
 
+        # Start game main loop
         self.main_loop(tools, player, floor, door, enemy_contol, coin)
 
+    # Main loop of our game
     def main_loop(self, tools, player, floor, door, enemy_control, coin):
         # Clock
         clock = pg.time.Clock()
+
          # While loop is running
         running = True
+
         # Start screen check
         pressed_key = False
 
@@ -555,6 +581,7 @@ class Game:
                 player.get_event(event)
             
             self.window.fill(BLACK)
+
             # If player is alive and game is not won and game is started. Update player, enemies and coin and draw them on screen
             if not player.dead and not player.game_won and pressed_key:
                 player.update(keys, enemy_control.enemies, door)
@@ -586,7 +613,7 @@ class Game:
             tools.draw()
         
             pg.display.update()
-            clock.tick(60)
+            clock.tick(FPS)
 
         # Exit
         pg.quit()
