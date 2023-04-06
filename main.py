@@ -130,7 +130,6 @@ class EnemyController:
         # Create new enemies 
         self.player_enemies += 5 
         self.create_enemies()    
-        print(len(self.enemies))
     
 class Enemy:
     def __init__(self, image, window_rect, starting_position, enemy_type):
