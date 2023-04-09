@@ -48,8 +48,8 @@ class EnemyController:
         self.create_enemies()
 
         # Used only for our game over screen
-        self.enemy_image_won = self.enemy_image_load('pink')
-        self.enemy_image_won_rect = self.enemy_image_won.get_rect()
+        #self.enemy_image_won = self.enemy_image_load('pink')
+        self.enemy_image_won_rect = self.pink_enemy_image.get_rect()
     
     # Create our enemies. Load them and do modifications. Append them to our list with enemies
     def create_enemies(self):
@@ -79,8 +79,6 @@ class EnemyController:
             transformed_image = pg.transform.rotate(image, 50)
             self.swap_enemy_color(transformed_image, (BLACK), (PINK))
             self.swap_enemy_color(transformed_image, (255, 255, 255), (GREEN))
-            #image.set_colorkey((0, 0, 0))
-            #transformed_image = image
             
             return transformed_image
 
@@ -375,8 +373,6 @@ class Coin:
         # Spawn coin at start at random location - Left corner or Right corner
         self.spawn_random = random.choice([[20, 0], [WIN_WIDTH -20, 0]])
         self.rect = self.image.get_rect(center=(self.spawn_random))
- 
-        #self.rect = self.image.get_rect(center=(self.window_rect.centerx, self.window_rect.bottom - self.start_buffer)) 
         
         self.collected = False
         self.coin_points = 50
@@ -594,7 +590,7 @@ class Game:
             if player.dead:
                 self.window.blit(tools.game_over_text, tools.game_over_rect)
                 self.window.blit(player.dead_image, player.dead_image_rect)
-                self.window.blit(enemy_control.enemy_image_won, (330, 447))
+                self.window.blit(enemy_control.pink_enemy_image, (330, 447))
 
             # Game won screen
             if player.game_won:

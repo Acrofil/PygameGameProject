@@ -1,5 +1,5 @@
 # A final project for the [University of Helsinki](https://www.mooc.fi/en/) MOOC - [Advanced Programming with Python](https://programming-23.mooc.fi/) 
-# Game finished on date: 04.06.2023
+# Game finished on date: 06.04.2023
 
 ## Project objective is to create a game using OOP concepts learned in the course. 
 There are total of 4 images that we can use for our game and we must not use other images because of testing our game by others.
@@ -10,8 +10,7 @@ There are total of 4 images that we can use for our game and we must not use oth
 - The game has to have enemies or items to be collected
 - Player must have clear task in the game
 - The game must have some kind of counter to show how the player is doing in the game
-- Use functions, methods.
-
+- Use functions, methods, classes.
 
 
 # My game information
