@@ -48,7 +48,6 @@ class EnemyController:
         self.create_enemies()
 
         # Used only for our game over screen
-        #self.enemy_image_won = self.enemy_image_load('pink')
         self.enemy_image_won_rect = self.pink_enemy_image.get_rect()
     
     # Create our enemies. Load them and do modifications. Append them to our list with enemies
